@@ -123,6 +123,22 @@ document.addEventListener('DOMContentLoaded', () => {
         resetIdleTimer();
     });
 
+    // Scene Selector Bar Handlers
+    const movieModeBtn = document.getElementById('movieModeBtn');
+    if (movieModeBtn) {
+        movieModeBtn.addEventListener('click', () => {
+            engine.setFullMovieMode(true);
+        });
+    }
+
+    document.querySelectorAll('.scene-tab[data-scene]').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const idx = parseInt(tab.getAttribute('data-scene'));
+            engine.setFullMovieMode(false);
+            engine.setActiveScene(idx, true);
+        });
+    });
+
     // File Upload handling
     uploadBtn.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('click', () => fileInput.click());
@@ -135,7 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            engine.loadCustomPhoto(e.target.result);
+            const img = new Image();
+            img.onload = () => {
+                engine.sceneImages['portrait'] = img;
+                engine.processScene(engine.scenes[2], img);
+                engine.setActiveScene(2, true);
+            };
+            img.src = e.target.result;
             settingsModal.classList.remove('active');
             resetIdleTimer();
         };
@@ -181,36 +203,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (focusSlider) {
         focusSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
-            engine.config.focusFalloff = val / 100;
+            engine.scenes[2].focusFalloff = val / 100;
             focusVal.textContent = val + '%';
-            if (engine.currentImage) engine.processImage(engine.currentImage);
+            engine.reprocessAllScenes();
         });
     }
 
     densitySlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
         engine.config.dotDensity = val;
+        engine.scenes.forEach(s => s.dotDensity = val);
         densityVal.textContent = val.toLocaleString();
-        if (engine.currentImage) engine.processImage(engine.currentImage);
+        engine.reprocessAllScenes();
     });
 
     sizeSlider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         engine.config.particleSize = val;
         sizeVal.textContent = val.toFixed(1) + 'px';
-        if (engine.currentImage) engine.processImage(engine.currentImage);
+        engine.reprocessAllScenes();
     });
 
     thresholdSlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
         engine.config.threshold = val;
         thresholdVal.textContent = val;
-        if (engine.currentImage) engine.processImage(engine.currentImage);
+        engine.reprocessAllScenes();
     });
 
     invertCheck.addEventListener('change', (e) => {
         engine.config.invertLuminance = e.target.checked;
-        if (engine.currentImage) engine.processImage(engine.currentImage);
+        engine.reprocessAllScenes();
     });
 
     // Keyboard Shortcuts

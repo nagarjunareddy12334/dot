@@ -43,6 +43,22 @@
 
     <!-- Floating Video Player HUD -->
     <footer class="hud-layer bottom-hud" id="bottomHud">
+        <!-- Scene Chapter Selector Bar -->
+        <div class="scene-bar" id="sceneBar">
+            <button class="scene-tab tab-movie active" id="movieModeBtn" title="Play Full Continuous Love Story">
+                🎬 Full Story Film
+            </button>
+            <button class="scene-tab" data-scene="0" title="Act 1: The Night Walk">
+                🌙 Act 1: Night Walk
+            </button>
+            <button class="scene-tab" data-scene="1" title="Act 2: Candlelight Date">
+                🕯️ Act 2: Table Date
+            </button>
+            <button class="scene-tab" data-scene="2" title="Act 3: Her Portrait">
+                💖 Act 3: Her Portrait
+            </button>
+        </div>
+
         <!-- Scrubbable Video Timeline -->
         <div class="timeline-track-wrap" id="timelineTrack" title="Click to seek">
             <div class="timeline-progress" id="timelineProgress"></div>
@@ -143,7 +159,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="default_image_data.js"></script>
+    <script src="scenes_data.js"></script>
     <script src="audio.js"></script>
     <script src="particle_engine.js"></script>
     <script src="main.js"></script>

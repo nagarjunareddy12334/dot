@@ -365,8 +365,61 @@ canvas#cinemaCanvas {
     margin-top: 6px;
 }
 
+/* Scene Chapter Bar */
+.scene-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.scene-tab {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #aaaaaa;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.scene-tab:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.scene-tab.active {
+    background: #ffffff;
+    color: #000000;
+    font-weight: 600;
+    border-color: #ffffff;
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+}
+
+.scene-tab.tab-movie {
+    border-color: rgba(255, 120, 160, 0.4);
+    color: #ffb3c6;
+}
+
+.scene-tab.tab-movie.active {
+    background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 0 20px rgba(255, 117, 140, 0.7);
+}
+
 /* Auto-hide HUD on idle */
 body.cinema-idle .hud-layer {
     opacity: 0;
     pointer-events: none;
 }
+
