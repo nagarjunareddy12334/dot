@@ -90,6 +90,8 @@ class ConstellationEngine {
         this.floatingPetals = [];
         this.candleEmbers = [];
         this.templeDiyaEmbers = [];
+        this.diamondGlitter = [];
+        this.touchSparkles = [];
 
         // Timing
         this.currentTime = 0.0;
@@ -101,7 +103,8 @@ class ConstellationEngine {
         this.config = {
             dotDensity: 14000,
             particleSize: 1.6,
-            glowIntensity: 7,
+            glowIntensity: 8,
+            diamondBrilliance: 1.2,  // Diamond sparkle multiplier
             threshold: 38,
             focusFalloff: 0.85,
             showPetals: true,
@@ -132,12 +135,16 @@ class ConstellationEngine {
         this.createFloatingPetals();
         this.createCandleEmbers();
         this.createTempleDiyaEmbers();
+        this.createDiamondGlitter();
 
         // Mouse & Touch interaction
         window.addEventListener('mousemove', (e) => {
             this.mouse.x = e.clientX;
             this.mouse.y = e.clientY;
             this.mouse.active = true;
+            if (this.scenes[this.currentSceneIndex].type === 'portrait' && Math.random() < 0.35) {
+                this.spawnDiamondSparkle(e.clientX, e.clientY);
+            }
         });
 
         window.addEventListener('mouseleave', () => {
@@ -149,6 +156,9 @@ class ConstellationEngine {
                 this.mouse.x = e.touches[0].clientX;
                 this.mouse.y = e.touches[0].clientY;
                 this.mouse.active = true;
+                if (this.scenes[this.currentSceneIndex].type === 'portrait' && Math.random() < 0.35) {
+                    this.spawnDiamondSparkle(e.touches[0].clientX, e.touches[0].clientY);
+                }
             }
         }, { passive: true });
 
@@ -235,6 +245,34 @@ class ConstellationEngine {
                 maxLife: 80
             });
         }
+    }
+
+    createDiamondGlitter() {
+        this.diamondGlitter = [];
+        for (let i = 0; i < 48; i++) {
+            this.diamondGlitter.push({
+                x: this.width * 0.32 + Math.random() * (this.width * 0.36),
+                y: this.height * 0.12 + Math.random() * (this.height * 0.72),
+                size: Math.random() * 2.2 + 0.8,
+                phase: Math.random() * Math.PI * 2,
+                twinkleSpeed: 0.04 + Math.random() * 0.05,
+                vx: (Math.random() - 0.5) * 0.18,
+                vy: (Math.random() - 0.5) * 0.18,
+                baseAlpha: Math.random() * 0.75 + 0.25
+            });
+        }
+    }
+
+    spawnDiamondSparkle(x, y) {
+        if (this.touchSparkles.length > 25) return;
+        this.touchSparkles.push({
+            x: x + (Math.random() - 0.5) * 20,
+            y: y + (Math.random() - 0.5) * 20,
+            size: Math.random() * 8 + 4,
+            alpha: 1.0,
+            decay: 0.04 + Math.random() * 0.03,
+            rot: Math.random() * Math.PI
+        });
     }
 
     preloadAllScenes() {
@@ -389,12 +427,16 @@ class ConstellationEngine {
         this.sceneParticleCache[scene.id] = targetParticles;
 
         sparkles.sort(() => Math.random() - 0.5);
-        this.sceneSparkleCache[scene.id] = sparkles.slice(0, 24).map(sp => ({
+        const sparkleCount = scene.type === 'portrait' ? 85 : 24;
+        this.sceneSparkleCache[scene.id] = sparkles.slice(0, sparkleCount).map(sp => ({
             x: sp.x,
             y: sp.y,
             phase: Math.random() * Math.PI * 2,
-            speed: 0.04 + Math.random() * 0.03,
-            maxSize: 5 + Math.random() * 5
+            speed: 0.035 + Math.random() * 0.045,
+            maxSize: (scene.type === 'portrait' ? 8 : 5) + Math.random() * (scene.type === 'portrait' ? 12 : 5),
+            rot: Math.random() * Math.PI,
+            rotSpeed: (Math.random() - 0.5) * 0.03,
+            isDiamond: scene.type === 'portrait'
         }));
     }
 
@@ -588,11 +630,17 @@ class ConstellationEngine {
             this.drawCandleEmbers(ctx);
         } else if (curScene.type === 'templeDate') {
             this.drawTempleDiyaEmbers(ctx);
+        } else if (curScene.type === 'portrait' && t >= 3.0) {
+            this.drawDiamondGlitter(ctx, t);
         }
 
         const t = this.currentTime;
         const rippleDist = this.config.rippleStrength;
         const rippleDistSq = rippleDist * rippleDist;
+
+        // Diamond Shimmer Light Sweep for Act 1 (Her Portrait)
+        const shimmerSweep = (t * 0.35) % 1.0;
+        const sweepPos = shimmerSweep * (w + h);
 
         ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
         ctx.shadowBlur = this.config.glowIntensity;
@@ -639,7 +687,7 @@ class ConstellationEngine {
                     curY = p.heartY + (p.targetY - p.heartY) * ease + Math.sin(angle) * deflect;
                     alpha = 0.5 + ease * 0.5 * p.baseAlpha;
                 } else {
-                    // Living constellation portrait
+                    // Living diamond constellation portrait
                     p.floatAngle += p.floatSpeed;
                     const fOff = Math.sin(p.floatAngle + breathTime) * p.floatRadius;
                     curX = p.targetX + Math.cos(p.floatAngle) * fOff;
@@ -678,18 +726,44 @@ class ConstellationEngine {
             p.x = curX;
             p.y = curY;
 
+            let pSize = p.size;
+            let isDiamondPrism = false;
+
+            // Diamond light sweep effect on her face (Act 1)
+            if (curScene.type === 'portrait' && t >= 5.5) {
+                const distToSweep = Math.abs((curX + curY) - sweepPos);
+                if (distToSweep < 120) {
+                    const sweepGlow = (1.0 - distToSweep / 120) * this.config.diamondBrilliance;
+                    alpha = Math.min(1.0, alpha + sweepGlow * 0.45);
+                    pSize = p.size * (1.0 + sweepGlow * 0.85);
+                    isDiamondPrism = true;
+                }
+            }
+
             if (alpha > 0.02) {
                 ctx.globalAlpha = alpha;
+                if (isDiamondPrism || (curScene.type === 'portrait' && p.colorLuminance > 0.65)) {
+                    ctx.shadowColor = 'rgba(215, 240, 255, 1.0)';
+                    ctx.shadowBlur = (this.config.glowIntensity + 6) * this.config.diamondBrilliance;
+                    ctx.fillStyle = isDiamondPrism ? '#f0f9ff' : '#ffffff';
+                } else {
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
+                    ctx.shadowBlur = this.config.glowIntensity;
+                    ctx.fillStyle = '#ffffff';
+                }
                 ctx.beginPath();
-                ctx.arc(curX, curY, p.size, 0, Math.PI * 2);
+                ctx.arc(curX, curY, pSize, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
         // Diamond sparkles (jewelry, diyas, phone stars, lanterns, candles)
-        if (this.config.showSparkles && t >= 4.5) {
+        if (this.config.showSparkles && t >= 4.0) {
             this.drawDiamondSparkles(ctx, t);
         }
+
+        // Interactive touch diamond bursts
+        this.drawTouchSparkles(ctx);
 
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 0;
@@ -713,43 +787,181 @@ class ConstellationEngine {
     }
 
     drawDiamondSparkles(ctx, t) {
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
+        const curScene = this.scenes[this.currentSceneIndex];
+        const isPortrait = curScene && curScene.type === 'portrait';
+        const brilliance = this.config.diamondBrilliance || 1.0;
+
+        ctx.shadowBlur = (isPortrait ? 16 : 12) * brilliance;
+        ctx.shadowColor = isPortrait ? 'rgba(215, 245, 255, 1.0)' : 'rgba(255, 255, 255, 1.0)';
         ctx.fillStyle = '#ffffff';
 
         for (let sp of this.sparklePoints) {
-            const cycle = Math.sin(t * 3.5 + sp.phase);
-            if (cycle > 0.3) {
-                const flareSize = sp.maxSize * Math.pow(cycle, 2);
-                const alpha = Math.min(1.0, (cycle - 0.3) * 1.5);
+            const cycle = Math.sin(t * sp.speed * 60 + sp.phase);
+            if (cycle > 0.25) {
+                const flareSize = sp.maxSize * Math.pow(cycle, 1.8) * (isPortrait ? brilliance : 1.0);
+                const alpha = Math.min(1.0, (cycle - 0.25) * 1.5) * (isPortrait ? Math.min(1.0, brilliance) : 1.0);
 
                 ctx.globalAlpha = alpha;
                 ctx.save();
                 ctx.translate(sp.x, sp.y);
+                
+                if (sp.rot !== undefined) {
+                    ctx.rotate(sp.rot + t * sp.rotSpeed);
+                }
 
+                if (sp.isDiamond) {
+                    // 8-Point Brilliant Cut Diamond Star
+                    // Primary Cardinal Spikes
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(-flareSize * 0.12, 0);
+                    ctx.lineTo(0, -flareSize);
+                    ctx.lineTo(flareSize * 0.12, 0);
+                    ctx.lineTo(0, flareSize);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, -flareSize * 0.12);
+                    ctx.lineTo(-flareSize, 0);
+                    ctx.lineTo(0, flareSize * 0.12);
+                    ctx.lineTo(flareSize, 0);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Secondary Diagonal Facet Spikes (45 degrees) with Prismatic Hue
+                    const diagSize = flareSize * 0.55;
+                    ctx.fillStyle = 'rgba(215, 240, 255, 0.9)';
+
+                    ctx.beginPath();
+                    ctx.moveTo(-diagSize * 0.08, -diagSize * 0.08);
+                    ctx.lineTo(diagSize * 0.7, -diagSize * 0.7);
+                    ctx.lineTo(diagSize * 0.08, diagSize * 0.08);
+                    ctx.lineTo(-diagSize * 0.7, diagSize * 0.7);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(-diagSize * 0.08, diagSize * 0.08);
+                    ctx.lineTo(diagSize * 0.7, diagSize * 0.7);
+                    ctx.lineTo(diagSize * 0.08, -diagSize * 0.08);
+                    ctx.lineTo(-diagSize * 0.7, -diagSize * 0.7);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Center Radiant Diamond Jewel Glint
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, flareSize * 0.28, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Delicate Prismatic Refraction Ring
+                    ctx.strokeStyle = 'rgba(180, 230, 255, 0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, flareSize * 0.45, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                } else {
+                    // Standard 4-point Star
+                    ctx.beginPath();
+                    ctx.moveTo(-flareSize * 0.15, 0);
+                    ctx.lineTo(0, -flareSize);
+                    ctx.lineTo(flareSize * 0.15, 0);
+                    ctx.lineTo(0, flareSize);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, -flareSize * 0.15);
+                    ctx.lineTo(-flareSize, 0);
+                    ctx.lineTo(0, flareSize * 0.15);
+                    ctx.lineTo(flareSize, 0);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(0, 0, flareSize * 0.25, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+    }
+
+    drawDiamondGlitter(ctx, t) {
+        ctx.save();
+        const brilliance = this.config.diamondBrilliance || 1.0;
+        ctx.shadowColor = 'rgba(210, 240, 255, 1.0)';
+        ctx.shadowBlur = 10 * brilliance;
+        ctx.fillStyle = '#ffffff';
+
+        for (let g of this.diamondGlitter) {
+            g.x += g.vx;
+            g.y += g.vy;
+
+            const tw = Math.sin(t * g.twinkleSpeed * 60 + g.phase);
+            if (tw > 0.2) {
+                const alpha = Math.min(1.0, (tw - 0.2) * 1.5) * g.baseAlpha * brilliance;
+                ctx.globalAlpha = alpha;
+
+                ctx.save();
+                ctx.translate(g.x, g.y);
+                ctx.rotate(g.phase + t * 0.5);
+
+                const s = g.size * (0.8 + tw * 0.5) * brilliance;
                 ctx.beginPath();
-                ctx.moveTo(-flareSize * 0.15, 0);
-                ctx.lineTo(0, -flareSize);
-                ctx.lineTo(flareSize * 0.15, 0);
-                ctx.lineTo(0, flareSize);
+                ctx.moveTo(0, -s);
+                ctx.lineTo(s * 0.3, 0);
+                ctx.lineTo(0, s);
+                ctx.lineTo(-s * 0.3, 0);
                 ctx.closePath();
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.moveTo(0, -flareSize * 0.15);
-                ctx.lineTo(-flareSize, 0);
-                ctx.lineTo(0, flareSize * 0.15);
-                ctx.lineTo(flareSize, 0);
-                ctx.closePath();
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(0, 0, flareSize * 0.25, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.restore();
             }
         }
+        ctx.restore();
+    }
+
+    drawTouchSparkles(ctx) {
+        if (this.touchSparkles.length === 0) return;
+        ctx.save();
+        const brilliance = this.config.diamondBrilliance || 1.0;
+        ctx.shadowColor = 'rgba(215, 245, 255, 1.0)';
+        ctx.shadowBlur = 14 * brilliance;
+        ctx.fillStyle = '#ffffff';
+
+        for (let i = this.touchSparkles.length - 1; i >= 0; i--) {
+            const sp = this.touchSparkles[i];
+            sp.alpha -= sp.decay;
+            if (sp.alpha <= 0) {
+                this.touchSparkles.splice(i, 1);
+                continue;
+            }
+
+            ctx.globalAlpha = sp.alpha * brilliance;
+            ctx.save();
+            ctx.translate(sp.x, sp.y);
+            ctx.rotate(sp.rot);
+
+            const s = sp.size * brilliance;
+            ctx.beginPath();
+            ctx.moveTo(0, -s);
+            ctx.lineTo(s * 0.25, -s * 0.25);
+            ctx.lineTo(s, 0);
+            ctx.lineTo(s * 0.25, s * 0.25);
+            ctx.lineTo(0, s);
+            ctx.lineTo(-s * 0.25, s * 0.25);
+            ctx.lineTo(-s, 0);
+            ctx.lineTo(-s * 0.25, -s * 0.25);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+        ctx.restore();
     }
 
     drawAmbientStars(ctx) {

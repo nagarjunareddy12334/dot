@@ -209,6 +209,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const diamondGlowSlider = document.getElementById('diamondGlowSlider');
+    const diamondGlowVal = document.getElementById('diamondGlowVal');
+    if (diamondGlowSlider) {
+        diamondGlowSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            engine.config.diamondBrilliance = val / 100;
+            engine.config.glowIntensity = Math.round(7 * (val / 100));
+            diamondGlowVal.textContent = val + '%';
+        });
+    }
+
     densitySlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
         engine.config.dotDensity = val;
