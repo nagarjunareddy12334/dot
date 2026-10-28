@@ -423,98 +423,86 @@ body.cinema-idle .hud-layer {
     pointer-events: none;
 }
 
-/* Sacred Temple Proposal Modal */
-.proposal-modal-overlay {
+/* Sacred Temple Proposal Prompt (Floating Card) */
+.proposal-prompt-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 100;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: radial-gradient(circle at center, rgba(35, 12, 22, 0.78) 0%, rgba(0, 0, 0, 0.90) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    bottom: 96px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px) scale(0.95);
+    z-index: 95;
+    max-width: 680px;
+    width: 92%;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.proposal-modal-overlay.active {
+.proposal-prompt-container.active {
     opacity: 1;
     pointer-events: auto;
+    transform: translateX(-50%) translateY(0) scale(1);
 }
 
-.proposal-card {
-    background: linear-gradient(135deg, rgba(255, 235, 245, 0.14), rgba(255, 210, 160, 0.08));
-    border: 1.5px solid rgba(255, 220, 170, 0.4);
-    border-radius: 28px;
-    padding: 38px 44px;
-    text-align: center;
-    max-width: 540px;
-    width: 90%;
-    box-shadow: 0 24px 64px rgba(255, 120, 140, 0.22), 0 0 50px rgba(255, 215, 140, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    transform: scale(0.92);
-    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
+.proposal-glass-card {
+    background: linear-gradient(135deg, rgba(35, 14, 25, 0.88), rgba(18, 8, 14, 0.94));
+    border: 1.5px solid rgba(255, 215, 150, 0.45);
+    border-radius: 22px;
+    padding: 20px 28px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 35px rgba(255, 180, 120, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-.proposal-modal-overlay.active .proposal-card {
-    transform: scale(1);
+@media (max-width: 650px) {
+    .proposal-glass-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 18px;
+    }
 }
 
-.proposal-ring-sparkle {
-    font-size: 56px;
-    margin-bottom: 12px;
-    display: inline-block;
+.proposal-ring-icon {
+    font-size: 38px;
+    filter: drop-shadow(0 0 16px rgba(255, 220, 140, 0.95));
     animation: ringFloat 2.2s ease-in-out infinite;
-    filter: drop-shadow(0 0 20px rgba(255, 225, 160, 0.95));
+    flex-shrink: 0;
 }
 
 @keyframes ringFloat {
     0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
-    50% { transform: translateY(-8px) scale(1.1) rotate(5deg); }
+    50% { transform: translateY(-6px) scale(1.08) rotate(5deg); }
 }
 
-.proposal-title {
-    font-family: 'Cinzel', serif;
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    background: linear-gradient(90deg, #fff7ea, #ffccd7, #ffd89b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 6px;
-    text-shadow: 0 0 24px rgba(255, 200, 180, 0.4);
+.proposal-text-block {
+    flex-grow: 1;
 }
 
-.proposal-sacred-subtitle {
-    font-size: 13px;
-    color: #ffcf96;
-    letter-spacing: 1px;
+.proposal-subtitle {
+    font-size: 11px;
+    color: #ffd89b;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 16px;
+    font-weight: 600;
+    margin-bottom: 3px;
 }
 
 .proposal-question {
-    font-size: 17px;
-    line-height: 1.6;
+    font-size: 15px;
     color: #ffffff;
+    font-weight: 400;
+    line-height: 1.4;
     font-style: italic;
-    font-weight: 300;
-    margin-bottom: 28px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
 
-.proposal-actions {
+.proposal-btn-group {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .proposal-btn {
@@ -522,39 +510,39 @@ body.cinema-idle .hud-layer {
     outline: none;
     cursor: pointer;
     border-radius: 9999px;
-    padding: 16px 32px;
-    font-size: 16px;
+    padding: 12px 22px;
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: 1px;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    letter-spacing: 0.5px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
 }
 
 .proposal-btn-accept {
     background: linear-gradient(135deg, #ff4d79, #ff758c, #ff9a44);
     color: #ffffff;
-    box-shadow: 0 10px 30px rgba(255, 77, 121, 0.45);
+    box-shadow: 0 6px 20px rgba(255, 77, 121, 0.5);
     animation: pulseAccept 1.8s infinite;
 }
 
 .proposal-btn-accept:hover {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 14px 44px rgba(255, 77, 121, 0.7);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(255, 77, 121, 0.75);
 }
 
 .proposal-btn-sweet {
     background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.28);
     color: #ffe6ef;
 }
 
 .proposal-btn-sweet:hover {
-    background: rgba(255, 255, 255, 0.24);
-    transform: translateY(-2px) scale(1.02);
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
 }
 
 @keyframes pulseAccept {
-    0%, 100% { box-shadow: 0 8px 26px rgba(255, 77, 121, 0.45); }
-    50% { box-shadow: 0 14px 44px rgba(255, 77, 121, 0.85); }
+    0%, 100% { box-shadow: 0 6px 20px rgba(255, 77, 121, 0.45); }
+    50% { box-shadow: 0 10px 32px rgba(255, 77, 121, 0.85); }
 }
 

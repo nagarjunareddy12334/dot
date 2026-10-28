@@ -39,8 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetIdleTimer() {
         document.body.classList.remove('cinema-idle');
         clearTimeout(idleTimeout);
-        // If settings modal is open, don't hide
-        if (settingsModal.classList.contains('active')) return;
+        // If settings modal or proposal prompt is open, don't hide
+        const proposalModal = document.getElementById('proposalModal');
+        if (settingsModal.classList.contains('active') || (proposalModal && proposalModal.classList.contains('active'))) return;
         
         idleTimeout = setTimeout(() => {
             document.body.classList.add('cinema-idle');

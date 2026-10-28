@@ -99,8 +99,8 @@ class ConstellationEngine {
         // Proposal State (Act 6 Interactive Proposal)
         this.proposalAccepted = false;
         this.proposalModalShown = false;
-        this.isMorphingToKiss = false;
-        this.morphStartTime = 0.0;
+        this.proposalAcceptTime = 0.0;
+        this.celebrationPetals = null;
 
         // Active State
         this.particles = [];
@@ -326,6 +326,8 @@ class ConstellationEngine {
                 dataSrc = window.DEFAULT_PHOTO_BASE64;
             } else if (scene.id === 'portrait') {
                 dataSrc = 'girlfriend.jpg';
+            } else if (scene.id === 'proposal') {
+                dataSrc = (window.SCENES_DATA && window.SCENES_DATA['proposalKnee']) ? window.SCENES_DATA['proposalKnee'] : 'proposal_knee.jpg';
             } else {
                 dataSrc = `${scene.imageKey}.jpg`;
             }
@@ -333,19 +335,12 @@ class ConstellationEngine {
             img.src = dataSrc;
         });
 
-        // Also preload proposalKiss for Act 6 finale acceptance morph
+        // Also preload proposalKiss for Act 6 finale acceptance scene
         const kissImg = new Image();
         kissImg.onload = () => {
             this.sceneImages['proposalKiss'] = kissImg;
-            this.processScene({
-                id: 'proposalKiss',
-                type: 'proposalKiss',
-                threshold: 22,
-                dotDensity: 14000,
-                focusFalloff: 0.10
-            }, kissImg);
         };
-        kissImg.src = window.SCENES_DATA && window.SCENES_DATA['proposalKiss']
+        kissImg.src = (window.SCENES_DATA && window.SCENES_DATA['proposalKiss'])
             ? window.SCENES_DATA['proposalKiss']
             : 'proposal_kiss.jpg';
     }
@@ -514,8 +509,8 @@ class ConstellationEngine {
         if (scene.id === 'proposal') {
             this.proposalAccepted = false;
             this.proposalModalShown = false;
-            this.isMorphingToKiss = false;
-            this.morphStartTime = 0.0;
+            this.proposalAcceptTime = 0.0;
+            this.celebrationPetals = null;
             const modal = document.getElementById('proposalModal');
             if (modal) modal.classList.remove('active');
         }
@@ -571,11 +566,10 @@ class ConstellationEngine {
             if (this.scenes[this.currentSceneIndex].id === 'proposal') {
                 this.proposalAccepted = false;
                 this.proposalModalShown = false;
-                this.isMorphingToKiss = false;
-                this.morphStartTime = 0.0;
+                this.proposalAcceptTime = 0.0;
+                this.celebrationPetals = null;
                 const modal = document.getElementById('proposalModal');
                 if (modal) modal.classList.remove('active');
-                this.particles = this.sceneParticleCache['proposal'] || [];
             }
         }
         this.isPlaying = true;
@@ -603,14 +597,13 @@ class ConstellationEngine {
 
     showProposalModal() {
         this.proposalModalShown = true;
-        this.isPlaying = false;
-        this.updatePlayPauseUI();
         const modal = document.getElementById('proposalModal');
         if (modal) modal.classList.add('active');
     }
 
     acceptProposal() {
         this.proposalAccepted = true;
+        this.proposalAcceptTime = this.currentTime;
         const modal = document.getElementById('proposalModal');
         if (modal) modal.classList.remove('active');
 
@@ -627,32 +620,12 @@ class ConstellationEngine {
             window.soundscape.playTempleCelebration();
         }
 
-        // Spawn explosive celebratory diamond sparkle bursts
-        for (let i = 0; i < 45; i++) {
+        // Spawn celebratory diamond sparkle bursts
+        for (let i = 0; i < 50; i++) {
             this.spawnDiamondSparkle(
                 this.width * 0.15 + Math.random() * (this.width * 0.7),
                 this.height * 0.15 + Math.random() * (this.height * 0.7)
             );
-        }
-
-        // Morph particles smoothly from proposalKnee to proposalKiss
-        const kissParticles = this.sceneParticleCache['proposalKiss'];
-        if (kissParticles && kissParticles.length > 0) {
-            const count = Math.min(this.particles.length, kissParticles.length);
-            for (let i = 0; i < count; i++) {
-                const p = this.particles[i];
-                const kp = kissParticles[i];
-                p.morphStartX = p.x;
-                p.morphStartY = p.y;
-                p.targetX = kp.targetX;
-                p.targetY = kp.targetY;
-                p.size = kp.size;
-                p.baseAlpha = kp.baseAlpha;
-                p.colorLuminance = kp.colorLuminance;
-                p.staggerDelay = Math.random() * 1.0;
-            }
-            this.morphStartTime = this.currentTime;
-            this.isMorphingToKiss = true;
         }
 
         this.isPlaying = true;
@@ -771,16 +744,21 @@ class ConstellationEngine {
         }
 
         const curScene = this.scenes[this.currentSceneIndex];
-        if (!curScene || this.particles.length === 0) return;
+        if (!curScene) return;
+
+        // Act 6: Sacred Temple Proposal (3D Indian Anime Cinematic Experience!)
+        if (curScene.type === 'proposal') {
+            this.drawProposalScene(ctx, t);
+            return;
+        }
+
+        if (this.particles.length === 0) return;
 
         // Scene-specific animated elements
         if (curScene.type === 'tableDate') {
             this.drawCandleEmbers(ctx);
-        } else if (curScene.type === 'templeDate' || curScene.type === 'proposal') {
+        } else if (curScene.type === 'templeDate') {
             this.drawTempleDiyaEmbers(ctx);
-            if (this.proposalAccepted) {
-                this.drawDiamondGlitter(ctx, t);
-            }
         } else if (curScene.type === 'portrait' && t >= 3.0) {
             this.drawDiamondGlitter(ctx, t);
         }
@@ -916,13 +894,12 @@ class ConstellationEngine {
 
             if (alpha > 0.02) {
                 ctx.globalAlpha = alpha;
-                if (isDiamondPrism || (curScene.type === 'portrait' && p.colorLuminance > 0.65)) {
+                if (isDiamondPrism) {
                     ctx.shadowColor = 'rgba(215, 240, 255, 1.0)';
-                    ctx.shadowBlur = (this.config.glowIntensity + 6) * this.config.diamondBrilliance;
-                    ctx.fillStyle = isDiamondPrism ? '#f0f9ff' : '#ffffff';
+                    ctx.shadowBlur = 12 * this.config.diamondBrilliance;
+                    ctx.fillStyle = '#f0f9ff';
                 } else {
-                    ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
-                    ctx.shadowBlur = this.config.glowIntensity;
+                    ctx.shadowBlur = 0; // ZERO shadowBlur for normal dots: 60 FPS buttery smooth!
                     ctx.fillStyle = '#ffffff';
                 }
                 ctx.beginPath();
@@ -958,6 +935,178 @@ class ConstellationEngine {
         p.vx *= 0.88;
         p.vy *= 0.88;
         return curX + p.vx;
+    }
+
+    drawProposalScene(ctx, t) {
+        const w = this.width;
+        const h = this.height;
+
+        // Choose image: knee or kiss (with smooth cross-fade upon acceptance)
+        const kneeImg = this.sceneImages['proposalKnee'] || this.sceneImages['proposal'];
+        const kissImg = this.sceneImages['proposalKiss'];
+
+        let crossfade = 0;
+        if (this.proposalAccepted) {
+            const elapsed = Math.max(0, t - this.proposalAcceptTime);
+            crossfade = Math.min(1.0, elapsed / 1.2); // 1.2s smooth cinematic cross-fade
+        }
+
+        const renderAnimeFrame = (img, alpha, zoomFactor) => {
+            if (!img || !img.complete || (img.naturalWidth && img.naturalWidth === 0)) return;
+            const imgW = img.naturalWidth || img.width;
+            const imgH = img.naturalHeight || img.height;
+            if (!imgW || !imgH) return;
+
+            const screenAspect = w / h;
+            const imgAspect = imgW / imgH;
+
+            let dw, dh;
+            if (screenAspect > imgAspect) {
+                dw = w * zoomFactor;
+                dh = (w / imgAspect) * zoomFactor;
+            } else {
+                dh = h * zoomFactor;
+                dw = (h * imgAspect) * zoomFactor;
+            }
+            const dx = (w - dw) / 2;
+            const dy = (h - dh) / 2;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, Math.min(1.0, alpha));
+            ctx.drawImage(img, dx, dy, dw, dh);
+
+            // Subtle dark cinematic vignette around edges
+            const grad = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.45, w / 2, h / 2, Math.max(w, h) * 0.78);
+            grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.65)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.restore();
+        };
+
+        // Gentle breathing zoom (Ken Burns camera motion)
+        const zoom1 = 1.0 + Math.sin(t * 0.25) * 0.02;
+        const zoom2 = 1.0 + Math.sin((t + 2) * 0.25) * 0.025;
+
+        if (crossfade < 1.0 && kneeImg) {
+            renderAnimeFrame(kneeImg, 1.0 - crossfade, zoom1);
+        }
+        if (crossfade > 0.0 && kissImg) {
+            renderAnimeFrame(kissImg, crossfade, zoom2);
+        }
+
+        // Rising temple oil lamp diya embers
+        this.drawTempleDiyaEmbers(ctx);
+
+        // Falling celebration rose & jasmine petals upon acceptance
+        if (this.proposalAccepted) {
+            this.drawProposalCelebrationPetals(ctx);
+        }
+
+        // Diamond Ring Sparkle Flares
+        this.drawProposalRingGlints(ctx, t, crossfade);
+
+        // Touch Sparkles
+        this.drawTouchSparkles(ctx);
+    }
+
+    drawProposalRingGlints(ctx, t, crossfade) {
+        ctx.save();
+        const brilliance = this.config.diamondBrilliance || 1.2;
+        ctx.shadowColor = 'rgba(215, 245, 255, 1.0)';
+        ctx.shadowBlur = 18 * brilliance;
+
+        // Position of the diamond ring:
+        // In knee scene: center-right where ring box is held (~52% w, ~48% h)
+        // In kiss scene: lower center where ring finger is held (~53% w, ~70% h)
+        let ringX = this.width * (0.52 + (crossfade * 0.01));
+        let ringY = this.height * (0.48 + (crossfade * 0.22));
+
+        const pulse = 0.5 + Math.sin(t * 5.0) * 0.5;
+        const flareSize = (14 + pulse * 10) * brilliance;
+
+        ctx.translate(ringX, ringY);
+        ctx.rotate(t * 0.4);
+
+        // 8-point brilliant star flare on the diamond ring
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(-flareSize * 0.1, 0);
+        ctx.lineTo(0, -flareSize);
+        ctx.lineTo(flareSize * 0.1, 0);
+        ctx.lineTo(0, flareSize);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -flareSize * 0.1);
+        ctx.lineTo(-flareSize, 0);
+        ctx.lineTo(0, flareSize * 0.1);
+        ctx.lineTo(flareSize, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Diagonal sparkles
+        const diag = flareSize * 0.55;
+        ctx.fillStyle = 'rgba(210, 240, 255, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(-diag * 0.08, -diag * 0.08);
+        ctx.lineTo(diag * 0.7, -diag * 0.7);
+        ctx.lineTo(diag * 0.08, diag * 0.08);
+        ctx.lineTo(-diag * 0.7, diag * 0.7);
+        ctx.closePath();
+        ctx.fill();
+
+        // Center jewel glint
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, flareSize * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    drawProposalCelebrationPetals(ctx) {
+        if (!this.celebrationPetals) {
+            this.celebrationPetals = [];
+            for (let i = 0; i < 45; i++) {
+                this.celebrationPetals.push({
+                    x: Math.random() * this.width,
+                    y: Math.random() * -this.height,
+                    size: Math.random() * 5 + 3,
+                    alpha: Math.random() * 0.5 + 0.5,
+                    vy: Math.random() * 1.5 + 1.0,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    rot: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.03,
+                    color: Math.random() > 0.35 ? '#ff4d6d' : '#ffffff'
+                });
+            }
+        }
+
+        ctx.save();
+        for (let p of this.celebrationPetals) {
+            p.y += p.vy;
+            p.x += p.vx + Math.sin(p.y * 0.01) * 0.4;
+            p.rot += p.rotSpeed;
+
+            if (p.y > this.height + 20) {
+                p.y = -20;
+                p.x = Math.random() * this.width;
+            }
+
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
     }
 
     drawGlowingHeartOutline(ctx, t, heartPulse) {
