@@ -3,8 +3,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const engine = window.engine;
-    const soundscape = window.soundscape;
+    function getEngine() {
+        return window.engine;
+    }
+    function getSoundscape() {
+        return window.soundscape;
+    }
 
     // Elements
     const playPauseBtn = document.getElementById('playPauseBtn');
@@ -55,12 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Play / Pause
     playPauseBtn.addEventListener('click', () => {
-        engine.togglePlayPause();
+        if (getEngine()) getEngine().togglePlayPause();
     });
 
     // Replay
     replayBtn.addEventListener('click', () => {
-        engine.restartVideo();
+        if (getEngine()) getEngine().restartVideo();
     });
 
     // Timeline Scrubbing
@@ -69,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = timelineTrack.getBoundingClientRect();
         const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
         const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        engine.seek(pos * engine.duration);
+        if (getEngine()) getEngine().seek(pos * getEngine().duration);
     }
 
     timelineTrack.addEventListener('mousedown', (e) => {
@@ -103,13 +107,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Audio Synthesizer toggle
     audioBtn.addEventListener('click', () => {
-        const isMuted = soundscape.toggleMute();
-        audioBtn.innerHTML = isMuted ? '🔇 Audio: Off' : '🎵 Audio: Romantic';
+        const snd = getSoundscape();
+        if (snd) {
+            const isMuted = snd.toggleMute();
+            audioBtn.innerHTML = isMuted ? '🔇 Audio: Off' : '🎵 Audio: Romantic';
+        }
     });
 
     // Record Video
     recordBtn.addEventListener('click', () => {
-        engine.startRecording();
+        if (getEngine()) getEngine().startRecording();
     });
 
     // Settings Modal
@@ -128,15 +135,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const movieModeBtn = document.getElementById('movieModeBtn');
     if (movieModeBtn) {
         movieModeBtn.addEventListener('click', () => {
-            engine.setFullMovieMode(true);
+            if (getEngine()) getEngine().setFullMovieMode(true);
         });
     }
 
     document.querySelectorAll('.scene-tab[data-scene]').forEach(tab => {
         tab.addEventListener('click', () => {
             const idx = parseInt(tab.getAttribute('data-scene'));
-            engine.setFullMovieMode(false);
-            engine.setActiveScene(idx, true);
+            if (getEngine()) {
+                getEngine().setFullMovieMode(false);
+                getEngine().setActiveScene(idx, true);
+            }
         });
     });
 
@@ -154,9 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                engine.sceneImages['portrait'] = img;
-                engine.processScene(engine.scenes[0], img);
-                engine.setActiveScene(0, true);
+                if (getEngine()) {
+                    getEngine().sceneImages['portrait'] = img;
+                    getEngine().processScene(getEngine().scenes[0], img);
+                    getEngine().setActiveScene(0, true);
+                }
             };
             img.src = e.target.result;
             settingsModal.classList.remove('active');
@@ -204,9 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (focusSlider) {
         focusSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
-            engine.scenes[0].focusFalloff = val / 100;
-            focusVal.textContent = val + '%';
-            engine.reprocessAllScenes();
+            if (getEngine()) {
+                getEngine().scenes[0].focusFalloff = val / 100;
+                focusVal.textContent = val + '%';
+                getEngine().reprocessAllScenes();
+            }
         });
     }
 
@@ -215,37 +228,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (diamondGlowSlider) {
         diamondGlowSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
-            engine.config.diamondBrilliance = val / 100;
-            engine.config.glowIntensity = Math.round(7 * (val / 100));
-            diamondGlowVal.textContent = val + '%';
+            if (getEngine()) {
+                getEngine().config.diamondBrilliance = val / 100;
+                getEngine().config.glowIntensity = Math.round(7 * (val / 100));
+                diamondGlowVal.textContent = val + '%';
+            }
         });
     }
 
     densitySlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        engine.config.dotDensity = val;
-        engine.scenes.forEach(s => s.dotDensity = val);
-        densityVal.textContent = val.toLocaleString();
-        engine.reprocessAllScenes();
+        if (getEngine()) {
+            getEngine().config.dotDensity = val;
+            getEngine().scenes.forEach(s => s.dotDensity = val);
+            densityVal.textContent = val.toLocaleString();
+            getEngine().reprocessAllScenes();
+        }
     });
 
     sizeSlider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
-        engine.config.particleSize = val;
-        sizeVal.textContent = val.toFixed(1) + 'px';
-        engine.reprocessAllScenes();
+        if (getEngine()) {
+            getEngine().config.particleSize = val;
+            sizeVal.textContent = val.toFixed(1) + 'px';
+            getEngine().reprocessAllScenes();
+        }
     });
 
     thresholdSlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        engine.config.threshold = val;
-        thresholdVal.textContent = val;
-        engine.reprocessAllScenes();
+        if (getEngine()) {
+            getEngine().config.threshold = val;
+            thresholdVal.textContent = val;
+            getEngine().reprocessAllScenes();
+        }
     });
 
     invertCheck.addEventListener('change', (e) => {
-        engine.config.invertLuminance = e.target.checked;
-        engine.reprocessAllScenes();
+        if (getEngine()) {
+            getEngine().config.invertLuminance = e.target.checked;
+            getEngine().reprocessAllScenes();
+        }
     });
 
     // Keyboard Shortcuts
@@ -254,11 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (e.code === 'Space') {
             e.preventDefault();
-            engine.togglePlayPause();
+            if (getEngine()) getEngine().togglePlayPause();
         } else if (e.code === 'KeyF') {
             toggleFullscreen();
         } else if (e.code === 'KeyR') {
-            engine.restartVideo();
+            if (getEngine()) getEngine().restartVideo();
         } else if (e.code === 'KeyM') {
             audioBtn.click();
         } else if (e.code === 'Escape') {
@@ -268,28 +291,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto-start audio on first user click anywhere (browser autoplay policy)
     window.addEventListener('click', () => {
-        if (!soundscape.isPlaying && !soundscape.isMuted) {
-            soundscape.start();
+        const snd = getSoundscape();
+        if (snd && !snd.isPlaying && !snd.isMuted) {
+            snd.start();
         }
     }, { once: true });
 
-    // Proposal Accept Buttons
+    // Proposal Accept Buttons (Act 6 Sacred Proposal)
     const acceptProposalBtn = document.getElementById('acceptProposalBtn');
     const sweetProposalBtn = document.getElementById('sweetProposalBtn');
 
+    function handleProposalAccept(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        console.log('💍 Sacred proposal accepted by user!');
+        const eng = getEngine();
+        if (eng && typeof eng.acceptProposal === 'function') {
+            eng.acceptProposal();
+        } else if (typeof window.acceptProposal === 'function') {
+            window.acceptProposal();
+        }
+    }
+
     if (acceptProposalBtn) {
-        acceptProposalBtn.addEventListener('click', () => {
-            if (engine && engine.acceptProposal) {
-                engine.acceptProposal();
-            }
-        });
+        acceptProposalBtn.addEventListener('click', handleProposalAccept);
+        acceptProposalBtn.addEventListener('touchstart', handleProposalAccept, { passive: false });
+        acceptProposalBtn.addEventListener('pointerdown', handleProposalAccept);
     }
 
     if (sweetProposalBtn) {
-        sweetProposalBtn.addEventListener('click', () => {
-            if (engine && engine.acceptProposal) {
-                engine.acceptProposal();
-            }
-        });
+        sweetProposalBtn.addEventListener('click', handleProposalAccept);
+        sweetProposalBtn.addEventListener('touchstart', handleProposalAccept, { passive: false });
+        sweetProposalBtn.addEventListener('pointerdown', handleProposalAccept);
     }
 });

@@ -302,6 +302,9 @@ class ConstellationEngine {
             const img = new Image();
             img.onload = () => {
                 this.sceneImages[scene.id] = img;
+                if (scene.id === 'proposal') {
+                    this.sceneImages['proposalKnee'] = img;
+                }
                 this.processScene(scene, img);
                 loadedCount++;
                 // If the portrait (Act 1) is ready, activate it right away so the love symbol & pic show immediately!
@@ -602,8 +605,16 @@ class ConstellationEngine {
     }
 
     acceptProposal() {
+        if (this.proposalAccepted) return;
         this.proposalAccepted = true;
         this.proposalAcceptTime = this.currentTime;
+
+        // Ensure plenty of time for the romantic kiss and ring scene
+        const curScene = this.scenes[this.currentSceneIndex];
+        if (curScene && curScene.type === 'proposal') {
+            curScene.duration = Math.max(curScene.duration, this.currentTime + 14.0);
+        }
+
         const modal = document.getElementById('proposalModal');
         if (modal) modal.classList.remove('active');
 
@@ -621,7 +632,7 @@ class ConstellationEngine {
         }
 
         // Spawn celebratory diamond sparkle bursts
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 60; i++) {
             this.spawnDiamondSparkle(
                 this.width * 0.15 + Math.random() * (this.width * 0.7),
                 this.height * 0.15 + Math.random() * (this.height * 0.7)
@@ -661,9 +672,13 @@ class ConstellationEngine {
             this.currentTime += dt * this.playbackRate;
 
             // Trigger proposal question when he is on one knee holding the ring (Act 6)
-            if (curScene.type === 'proposal' && !this.proposalAccepted && !this.proposalModalShown) {
-                if (this.currentTime >= 4.2) {
+            if (curScene.type === 'proposal' && !this.proposalAccepted) {
+                if (!this.proposalModalShown && this.currentTime >= 1.8) {
                     this.showProposalModal();
+                }
+                // While waiting for her answer, hold time so the moment stays alive and never abruptly ends or loops!
+                if (this.proposalModalShown && this.currentTime > 3.8) {
+                    this.currentTime = 3.8;
                 }
             }
 
@@ -985,9 +1000,11 @@ class ConstellationEngine {
             ctx.restore();
         };
 
+        const realTime = performance.now() * 0.001;
+
         // Gentle breathing zoom (Ken Burns camera motion)
-        const zoom1 = 1.0 + Math.sin(t * 0.25) * 0.02;
-        const zoom2 = 1.0 + Math.sin((t + 2) * 0.25) * 0.025;
+        const zoom1 = 1.0 + Math.sin(realTime * 0.25) * 0.02;
+        const zoom2 = 1.0 + Math.sin((realTime + 2) * 0.25) * 0.025;
 
         if (crossfade < 1.0 && kneeImg) {
             renderAnimeFrame(kneeImg, 1.0 - crossfade, zoom1);
@@ -1023,11 +1040,12 @@ class ConstellationEngine {
         let ringX = this.width * (0.52 + (crossfade * 0.01));
         let ringY = this.height * (0.48 + (crossfade * 0.22));
 
-        const pulse = 0.5 + Math.sin(t * 5.0) * 0.5;
+        const realTime = performance.now() * 0.001;
+        const pulse = 0.5 + Math.sin(realTime * 5.0) * 0.5;
         const flareSize = (14 + pulse * 10) * brilliance;
 
         ctx.translate(ringX, ringY);
-        ctx.rotate(t * 0.4);
+        ctx.rotate(realTime * 0.4);
 
         // 8-point brilliant star flare on the diamond ring
         ctx.fillStyle = '#ffffff';
@@ -1518,6 +1536,21 @@ class ConstellationEngine {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    window.engine = new ConstellationEngine();
-});
+function initConstellationEngine() {
+    if (!window.engine) {
+        window.engine = new ConstellationEngine();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initConstellationEngine);
+} else {
+    initConstellationEngine();
+}
+
+// Global fail-safe hook for proposal acceptance
+window.acceptProposal = function() {
+    if (window.engine && typeof window.engine.acceptProposal === 'function') {
+        window.engine.acceptProposal();
+    }
+};

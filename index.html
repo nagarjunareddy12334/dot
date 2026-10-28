@@ -185,10 +185,10 @@
                 <div class="proposal-question">"Will you hold my hand through all lifetimes, accept this ring, and be my forever?" ❤️</div>
             </div>
             <div class="proposal-btn-group">
-                <button class="proposal-btn proposal-btn-accept" id="acceptProposalBtn">
+                <button class="proposal-btn proposal-btn-accept" id="acceptProposalBtn" onclick="if(window.engine){window.engine.acceptProposal()}else if(window.acceptProposal){window.acceptProposal()}">
                     💖 YES, I ACCEPT! 💍
                 </button>
-                <button class="proposal-btn proposal-btn-sweet" id="sweetProposalBtn">
+                <button class="proposal-btn proposal-btn-sweet" id="sweetProposalBtn" onclick="if(window.engine){window.engine.acceptProposal()}else if(window.acceptProposal){window.acceptProposal()}">
                     🥰 1000x YES!
                 </button>
             </div>
