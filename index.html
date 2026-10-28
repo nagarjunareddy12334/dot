@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Her Constellation | Glowing White Dot Cinema</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Main Cinema Canvas -->
+    <div id="canvasContainer">
+        <canvas id="cinemaCanvas"></canvas>
+    </div>
+
+    <!-- Floating Top HUD -->
+    <header class="hud-layer top-hud" id="topHud">
+        <div class="brand-badge">
+            <span class="star-icon">✨</span>
+            <span class="title">Constellation Cinema</span>
+        </div>
+
+        <div class="top-actions">
+            <button class="btn" id="uploadBtn">
+                📷 Change Photo
+            </button>
+            <button class="btn btn-record" id="recordBtn">
+                📹 Record & Export Video
+            </button>
+            <button class="btn" id="settingsBtn">
+                ⚙️ Settings
+            </button>
+            <button class="btn btn-primary" id="topFullscreenBtn">
+                ⛶ Fullscreen
+            </button>
+        </div>
+    </header>
+
+    <!-- Romantic Floating Caption -->
+    <div id="captionWrapper">
+        <div id="romanticCaption">You are the brightest star in my universe ❤️</div>
+    </div>
+
+    <!-- Floating Video Player HUD -->
+    <footer class="hud-layer bottom-hud" id="bottomHud">
+        <!-- Scrubbable Video Timeline -->
+        <div class="timeline-track-wrap" id="timelineTrack" title="Click to seek">
+            <div class="timeline-progress" id="timelineProgress"></div>
+        </div>
+
+        <div class="player-controls">
+            <div class="controls-left">
+                <button class="icon-btn" id="playPauseBtn" title="Play / Pause (Space)">
+                    ❚❚ Pause
+                </button>
+                <button class="icon-btn" id="replayBtn" title="Replay Animation (R)">
+                    ↺ Replay
+                </button>
+                <span class="time-stamp" id="timeDisplay">00:00.0 / 00:13.0</span>
+            </div>
+
+            <div class="controls-right">
+                <button class="btn" id="audioBtn" style="padding: 6px 14px; font-size: 12px;">
+                    🎵 Audio: Romantic
+                </button>
+                <button class="icon-btn" id="fullscreenBtn" title="Toggle Fullscreen (F)">
+                    ⛶
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Hidden File Input for Custom Photo -->
+    <input type="file" id="fileInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+
+    <!-- Settings & Customization Modal Drawer -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="modal-header">
+            <h2 class="modal-title">Constellation Settings</h2>
+            <button class="close-btn" id="closeSettingsBtn">&times;</button>
+        </div>
+
+        <!-- Photo Drag & Drop Zone -->
+        <div class="setting-group">
+            <div class="drop-zone" id="dropZone">
+                <div style="font-size: 24px; margin-bottom: 4px;">🖼️</div>
+                <div style="font-weight: 500; font-size: 14px;">Drag & Drop Her Photo Here</div>
+                <p>or click to browse from your computer (JPG, PNG, WEBP)</p>
+            </div>
+        </div>
+
+        <!-- Custom Message -->
+        <div class="setting-group">
+            <label class="setting-label">
+                <span>Romantic Caption:</span>
+            </label>
+            <input type="text" class="text-input" id="captionInput" value="You are the brightest star in my universe ❤️" placeholder="Type your personal message...">
+        </div>
+
+        <!-- Subject Focus / Background Fade -->
+        <div class="setting-group">
+            <label class="setting-label">
+                <span>Face & Jewelry Focus (Fade Background):</span>
+                <span id="focusVal">85%</span>
+            </label>
+            <input type="range" class="setting-slider" id="focusSlider" min="0" max="100" step="5" value="85">
+        </div>
+
+        <!-- Dot Density -->
+        <div class="setting-group">
+            <label class="setting-label">
+                <span>White Dot Density:</span>
+                <span id="densityVal">14,000</span>
+            </label>
+            <input type="range" class="setting-slider" id="densitySlider" min="4000" max="25000" step="1000" value="14000">
+        </div>
+
+        <!-- Dot Size -->
+        <div class="setting-group">
+            <label class="setting-label">
+                <span>Dot Size:</span>
+                <span id="sizeVal">1.8px</span>
+            </label>
+            <input type="range" class="setting-slider" id="sizeSlider" min="0.8" max="3.5" step="0.2" value="1.8">
+        </div>
+
+        <!-- Threshold / Sensitivity -->
+        <div class="setting-group">
+            <label class="setting-label">
+                <span>Black Cutoff Threshold:</span>
+                <span id="thresholdVal">45</span>
+            </label>
+            <input type="range" class="setting-slider" id="thresholdSlider" min="10" max="150" step="5" value="45">
+        </div>
+
+        <!-- Invert luminance checkbox -->
+        <div class="setting-group" style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="invertCheck" style="accent-color: #ffffff; cursor: pointer;">
+            <label for="invertCheck" style="font-size: 13px; color: #cccccc; cursor: pointer;">
+                Invert colors (Check if her photo has a white background)
+            </label>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="default_image_data.js"></script>
+    <script src="audio.js"></script>
+    <script src="particle_engine.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
