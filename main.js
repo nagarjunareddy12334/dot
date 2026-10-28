@@ -154,8 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const img = new Image();
             img.onload = () => {
                 engine.sceneImages['portrait'] = img;
-                engine.processScene(engine.scenes[2], img);
-                engine.setActiveScene(2, true);
+                engine.processScene(engine.scenes[0], img);
+                engine.setActiveScene(0, true);
             };
             img.src = e.target.result;
             settingsModal.classList.remove('active');
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (focusSlider) {
         focusSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
-            engine.scenes[2].focusFalloff = val / 100;
+            engine.scenes[0].focusFalloff = val / 100;
             focusVal.textContent = val + '%';
             engine.reprocessAllScenes();
         });

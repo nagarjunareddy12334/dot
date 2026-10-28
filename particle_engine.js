@@ -1,15 +1,11 @@
 /**
- * Multi-Scene Romantic Cinema Engine
- * Scenes:
- *  - Act 1: The Night Walk (Walking hand-in-hand under glowing lanterns and fairy lights)
- *  - Act 2: Candlelight Table Date (Intimate candlelit dinner holding hands with rising embers)
- *  - Act 3: Her Eternal Constellation (Cosmic Heart blossoming into her smiling portrait with diamond sparkles)
+ * The Story of Us: A 5-Act Love Story Film & Constellation Cinema
  * 
- * Features:
- *  - Continuous Romantic Short Film playback (seamless auto-progression across all 3 acts)
- *  - Individual Scene Selection (Jump directly to any memory)
- *  - Pre-cached particle physics for 60 FPS buttery smooth transitions
- *  - Full 60 FPS video recording and download
+ * Act 1: Love Symbol & Her Portrait (First love symbol / beating heart -> blooms into her radiant portrait)
+ * Act 2: A Random Snap Request (How we met on Snapchat and started our journey)
+ * Act 3: Falling In Love (Endless starry walks hand-in-hand under fairy lights)
+ * Act 4: Our Temple Date (Seeking sacred blessings together with glowing diyas)
+ * Act 5: Candlelight & Forever (Table date & eternal love declaration - A gift for my loved one)
  */
 
 class ConstellationEngine {
@@ -17,45 +13,72 @@ class ConstellationEngine {
         this.canvas = document.getElementById('cinemaCanvas');
         this.ctx = this.canvas.getContext('2d');
 
-        // Scene Definitions
+        // 5-Act Romantic Storyline
         this.scenes = [
             {
-                id: 'walking',
-                title: 'Act 1: The Night Walk',
-                caption: 'Walking by your side is where my heart belongs ✨',
-                imageKey: 'walking',
-                duration: 10.0,
-                focusFalloff: 0.12,
-                threshold: 28,
-                dotDensity: 14000,
-                type: 'walking'
-            },
-            {
-                id: 'tableDate',
-                title: 'Act 2: Candlelight Date',
-                caption: 'In the warm glow of candlelight, time stands still with you 🕯️🍷',
-                imageKey: 'tableDate',
-                duration: 10.0,
-                focusFalloff: 0.18,
-                threshold: 28,
-                dotDensity: 14000,
-                type: 'tableDate'
-            },
-            {
                 id: 'portrait',
-                title: 'Act 3: Her Portrait',
-                caption: 'You are the brightest star in my universe ❤️',
+                title: 'Act 1: Her Constellation',
+                caption: 'Every heartbeat in this universe beats for you ❤️',
                 imageKey: 'girlfriend',
-                duration: 13.0,
+                duration: 12.0,
                 focusFalloff: 0.85,
                 threshold: 38,
                 dotDensity: 14000,
-                type: 'portrait'
+                type: 'portrait',
+                badge: '💖 Act 1: Love & Her Portrait'
+            },
+            {
+                id: 'snapStory',
+                title: 'Act 2: Random Snap Request',
+                caption: 'It all began with one random Snapchat request... and turned into my whole world 👻💬✨',
+                imageKey: 'snapStory',
+                duration: 10.0,
+                focusFalloff: 0.15,
+                threshold: 25,
+                dotDensity: 14000,
+                type: 'snapStory',
+                badge: '👻 Act 2: How We Met'
+            },
+            {
+                id: 'walking',
+                title: 'Act 3: Falling In Love',
+                caption: 'Late night talks became endless walks, and day by day, I fell deeply in love with you 🌙✨',
+                imageKey: 'walking',
+                duration: 10.0,
+                focusFalloff: 0.15,
+                threshold: 28,
+                dotDensity: 14000,
+                type: 'walking',
+                badge: '🌙 Act 3: Falling In Love'
+            },
+            {
+                id: 'templeDate',
+                title: 'Act 4: Our Temple Date',
+                caption: 'Holding hands before God, praying for a lifetime of love and togetherness 🛕🪔🙏',
+                imageKey: 'templeDate',
+                duration: 10.0,
+                focusFalloff: 0.18,
+                threshold: 30,
+                dotDensity: 14000,
+                type: 'templeDate',
+                badge: '🛕 Act 4: Temple Date'
+            },
+            {
+                id: 'tableDate',
+                title: 'Act 5: Candlelight & Forever',
+                caption: 'To my favorite person, my greatest love... this is my forever gift to you 🕯️🍷💖',
+                imageKey: 'tableDate',
+                duration: 11.0,
+                focusFalloff: 0.18,
+                threshold: 28,
+                dotDensity: 14000,
+                type: 'tableDate',
+                badge: '🕯️ Act 5: Candlelight Date'
             }
         ];
 
         this.currentSceneIndex = 0;
-        this.isFullMovieMode = true; // Auto-plays Act 1 -> Act 2 -> Act 3
+        this.isFullMovieMode = true; // Continuous cinematic love story playback
         this.sceneParticleCache = {};
         this.sceneSparkleCache = {};
         this.sceneImages = {};
@@ -66,13 +89,13 @@ class ConstellationEngine {
         this.ambientStars = [];
         this.floatingPetals = [];
         this.candleEmbers = [];
+        this.templeDiyaEmbers = [];
 
         // Timing
         this.currentTime = 0.0;
         this.isPlaying = true;
         this.lastFrameTime = performance.now();
         this.playbackRate = 1.0;
-        this.transitionAlpha = 0.0; // Fade to black during scene changes
 
         // Config settings
         this.config = {
@@ -108,6 +131,7 @@ class ConstellationEngine {
         this.createAmbientStars();
         this.createFloatingPetals();
         this.createCandleEmbers();
+        this.createTempleDiyaEmbers();
 
         // Mouse & Touch interaction
         window.addEventListener('mousemove', (e) => {
@@ -132,7 +156,7 @@ class ConstellationEngine {
             this.mouse.active = false;
         });
 
-        // Load all scene images and pre-compute particles
+        // Preload all 5 scenes
         this.preloadAllScenes();
 
         // Render loop
@@ -150,7 +174,7 @@ class ConstellationEngine {
 
     createAmbientStars() {
         this.ambientStars = [];
-        for (let i = 0; i < 140; i++) {
+        for (let i = 0; i < 150; i++) {
             this.ambientStars.push({
                 x: Math.random() * window.innerWidth,
                 y: Math.random() * window.innerHeight,
@@ -166,7 +190,7 @@ class ConstellationEngine {
 
     createFloatingPetals() {
         this.floatingPetals = [];
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 32; i++) {
             this.floatingPetals.push({
                 x: Math.random() * window.innerWidth,
                 y: window.innerHeight + Math.random() * 300,
@@ -197,6 +221,22 @@ class ConstellationEngine {
         }
     }
 
+    createTempleDiyaEmbers() {
+        this.templeDiyaEmbers = [];
+        for (let i = 0; i < 30; i++) {
+            this.templeDiyaEmbers.push({
+                x: Math.random() * window.innerWidth,
+                y: this.height * 0.65 + Math.random() * (this.height * 0.25),
+                size: Math.random() * 2.5 + 1.0,
+                alpha: Math.random() * 0.8 + 0.2,
+                vy: -(Math.random() * 0.6 + 0.3),
+                vx: (Math.random() - 0.5) * 0.25,
+                life: Math.random() * 50 + 30,
+                maxLife: 80
+            });
+        }
+    }
+
     preloadAllScenes() {
         let loadedCount = 0;
         const total = this.scenes.length;
@@ -208,13 +248,13 @@ class ConstellationEngine {
                 this.processScene(scene, img);
                 loadedCount++;
                 if (loadedCount === total) {
-                    this.setActiveScene(0);
+                    this.setActiveScene(0); // Starts with Act 1: Love Symbol & Her Portrait
                 }
             };
 
             const dataSrc = window.SCENES_DATA && window.SCENES_DATA[scene.imageKey]
                 ? window.SCENES_DATA[scene.imageKey]
-                : (scene.id === 'portrait' ? 'girlfriend.jpg' : (scene.id === 'walking' ? 'walking_scene.jpg' : 'table_date.jpg'));
+                : (scene.id === 'portrait' ? 'girlfriend.jpg' : `${scene.imageKey}.jpg`);
             
             img.src = dataSrc;
         });
@@ -244,8 +284,7 @@ class ConstellationEngine {
         const offCanvas = document.createElement('canvas');
         const offCtx = offCanvas.getContext('2d');
 
-        // Scale to fit canvas with margins
-        const isWide = scene.type === 'walking' || scene.type === 'tableDate';
+        const isWide = scene.type !== 'portrait';
         const maxWidth = this.width * (isWide ? 0.76 : 0.68);
         const maxHeight = this.height * (isWide ? 0.74 : 0.78);
         let drawWidth = img.width;
@@ -276,7 +315,6 @@ class ConstellationEngine {
         const totalPixels = drawWidth * drawHeight;
         const approxStep = Math.max(1, Math.round(Math.sqrt(totalPixels / (scene.dotDensity * 1.55))));
 
-        // Subject focal centers
         const focalCenterX = drawWidth * (scene.type === 'portrait' ? 0.56 : 0.5);
         const focalCenterY = drawHeight * (scene.type === 'portrait' ? 0.30 : 0.5);
         const maxDistX = drawWidth * 0.55;
@@ -316,7 +354,7 @@ class ConstellationEngine {
                     const normLum = (lum - scene.threshold) / (255 - scene.threshold);
                     const dotSize = Math.max(0.6, (normLum * this.config.particleSize * (isWide ? 1.15 : 1.3)) + 0.35);
 
-                    // High brightness points for twinkling sparkles (lanterns, fairy lights, candles, jewelry)
+                    // Twinkle sparkles (jewelry, diyas, candles, lanterns, snap stars)
                     if (lum > 175 && (scene.type !== 'portrait' || y < drawHeight * 0.65)) {
                         sparkles.push({ x: targetX, y: targetY, lum: normLum });
                     }
@@ -350,7 +388,6 @@ class ConstellationEngine {
 
         this.sceneParticleCache[scene.id] = targetParticles;
 
-        // Select top sparkling stars
         sparkles.sort(() => Math.random() - 0.5);
         this.sceneSparkleCache[scene.id] = sparkles.slice(0, 24).map(sp => ({
             x: sp.x,
@@ -468,10 +505,8 @@ class ConstellationEngine {
         if (this.isPlaying) {
             this.currentTime += dt * this.playbackRate;
 
-            // Scene Completion
             if (this.currentTime >= sceneDuration) {
                 if (this.isFullMovieMode) {
-                    // Advance to next chapter of the film
                     const nextIndex = this.currentSceneIndex + 1;
                     if (nextIndex < this.scenes.length) {
                         this.setActiveScene(nextIndex);
@@ -479,14 +514,13 @@ class ConstellationEngine {
                         this.stopRecording();
                         this.isPlaying = false;
                     } else if (this.config.autoReplay) {
-                        this.setActiveScene(0); // Loop entire film
+                        this.setActiveScene(0); // Seamlessly loop love story film
                     } else {
                         this.currentTime = sceneDuration;
                         this.isPlaying = false;
                         this.updatePlayPauseUI();
                     }
                 } else {
-                    // Single scene loop
                     if (this.config.autoReplay && !this.isRecording) {
                         this.currentTime = 0;
                     } else if (this.isRecording) {
@@ -516,14 +550,12 @@ class ConstellationEngine {
             const curSec = Math.floor(this.currentTime);
             const curMs = Math.floor((this.currentTime % 1) * 10);
             const totSec = Math.floor(duration);
-            const curScene = this.scenes[this.currentSceneIndex];
-            timeDisplay.textContent = `[${this.currentSceneIndex + 1}/${this.scenes.length}] 00:${curSec < 10 ? '0' : ''}${curSec}.${curMs} / 00:${totSec < 10 ? '0' : ''}${totSec}.0`;
+            timeDisplay.textContent = `[Act ${this.currentSceneIndex + 1}/${this.scenes.length}] 00:${curSec < 10 ? '0' : ''}${curSec}.${curMs} / 00:${totSec < 10 ? '0' : ''}${totSec}.0`;
         }
 
-        // Caption animation
         const captionEl = document.getElementById('romanticCaption');
         if (captionEl) {
-            const revealTime = this.scenes[this.currentSceneIndex].type === 'portrait' ? 7.5 : 5.0;
+            const revealTime = this.scenes[this.currentSceneIndex].type === 'portrait' ? 7.5 : 4.8;
             if (this.currentTime >= revealTime) {
                 const alpha = Math.min(1.0, (this.currentTime - revealTime) / 2.0);
                 captionEl.style.opacity = alpha;
@@ -539,14 +571,11 @@ class ConstellationEngine {
         const w = this.width;
         const h = this.height;
 
-        // OLED True Black
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, w, h);
 
-        // Ambient background stars
         this.drawAmbientStars(ctx);
 
-        // Floating rose petals
         if (this.config.showPetals) {
             this.drawFloatingPetals(ctx);
         }
@@ -554,9 +583,11 @@ class ConstellationEngine {
         const curScene = this.scenes[this.currentSceneIndex];
         if (!curScene || this.particles.length === 0) return;
 
-        // Candle flame embers (for table date scene)
+        // Scene-specific animated elements
         if (curScene.type === 'tableDate') {
             this.drawCandleEmbers(ctx);
+        } else if (curScene.type === 'templeDate') {
+            this.drawTempleDiyaEmbers(ctx);
         }
 
         const t = this.currentTime;
@@ -567,12 +598,12 @@ class ConstellationEngine {
         ctx.shadowBlur = this.config.glowIntensity;
         ctx.fillStyle = '#ffffff';
 
-        // Heart pulse (Act 3 only)
+        // Love Symbol / Pulsating Heart for Act 1
         let heartPulse = 1.0;
-        if (curScene.type === 'portrait' && t >= 2.0 && t < 4.2) {
-            const b1 = Math.max(0, Math.sin((t - 2.0) * Math.PI * 4));
-            const b2 = Math.max(0, Math.sin((t - 3.2) * Math.PI * 4));
-            heartPulse = 1.0 + (b1 + b2) * 0.12;
+        if (curScene.type === 'portrait' && t >= 1.8 && t < 4.2) {
+            const b1 = Math.max(0, Math.sin((t - 1.8) * Math.PI * 4));
+            const b2 = Math.max(0, Math.sin((t - 3.0) * Math.PI * 4));
+            heartPulse = 1.0 + (b1 + b2) * 0.14;
         }
 
         const breathTime = t * 1.5;
@@ -582,13 +613,14 @@ class ConstellationEngine {
             let curX, curY, alpha;
 
             if (curScene.type === 'portrait') {
-                // Act 3: Cosmic Heart -> Blooming Portrait
+                // First: Love symbol / Beating Heart -> Then: Her Portrait
                 if (t < 1.0) {
                     const pre = t * 0.4;
                     curX = p.startX + Math.sin(pre + p.twinklePhase) * 10;
                     curY = p.startY + Math.cos(pre + p.twinklePhase) * 10;
                     alpha = Math.max(0, Math.sin(p.twinklePhase + t * 2)) * 0.1;
                 } else if (t < 4.2) {
+                    // Swarm into pulsing cosmic love heart
                     const prog = Math.min(1.0, (t - 1.0) / 2.2);
                     const ease = this.easeInOutQuad(prog);
                     const swirl = (1.0 - prog) * 3.5;
@@ -598,6 +630,7 @@ class ConstellationEngine {
                     curY = p.startY + (hy - p.startY) * ease + Math.cos(swirl + p.twinklePhase) * (1.0 - prog) * 50;
                     alpha = prog * p.baseAlpha * (0.8 + Math.sin(t * 3 + p.twinklePhase) * 0.2);
                 } else if (t < 8.6) {
+                    // Blossoms into her gorgeous portrait!
                     const prog = Math.min(1.0, (t - 4.2) / (3.6 + p.staggerDelay * 0.6));
                     const ease = this.easeOutCubic(prog);
                     const deflect = Math.sin(prog * Math.PI) * 40;
@@ -606,6 +639,7 @@ class ConstellationEngine {
                     curY = p.heartY + (p.targetY - p.heartY) * ease + Math.sin(angle) * deflect;
                     alpha = 0.5 + ease * 0.5 * p.baseAlpha;
                 } else {
+                    // Living constellation portrait
                     p.floatAngle += p.floatSpeed;
                     const fOff = Math.sin(p.floatAngle + breathTime) * p.floatRadius;
                     curX = p.targetX + Math.cos(p.floatAngle) * fOff;
@@ -615,8 +649,8 @@ class ConstellationEngine {
                     curX = this.applyMouseRipple(p, curX, curY, rippleDist, rippleDistSq);
                 }
             } else {
-                // Act 1 & 2: Stardust Swirl -> Graceful Coalescence
-                const transitDuration = 4.2 + p.staggerDelay * 0.5;
+                // Acts 2, 3, 4, 5: Graceful stardust flow into the chapter memory
+                const transitDuration = 4.0 + p.staggerDelay * 0.5;
                 if (t < 0.8) {
                     const pre = t * 0.5;
                     curX = p.startX + Math.sin(pre + p.twinklePhase) * 12;
@@ -652,7 +686,7 @@ class ConstellationEngine {
             }
         }
 
-        // Diamond sparkles (lanterns, candles, jewelry)
+        // Diamond sparkles (jewelry, diyas, phone stars, lanterns, candles)
         if (this.config.showSparkles && t >= 4.5) {
             this.drawDiamondSparkles(ctx, t);
         }
@@ -792,6 +826,30 @@ class ConstellationEngine {
         }
     }
 
+    drawTempleDiyaEmbers(ctx) {
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255, 160, 40, 0.95)';
+        ctx.fillStyle = '#ffb300';
+
+        for (let diya of this.templeDiyaEmbers) {
+            diya.y += diya.vy;
+            diya.x += diya.vx + Math.sin(diya.y * 0.02) * 0.3;
+            diya.life--;
+
+            if (diya.life <= 0 || diya.y < this.height * 0.45) {
+                diya.x = Math.random() * this.width;
+                diya.y = this.height * 0.75 + Math.random() * (this.height * 0.15);
+                diya.life = Math.random() * 50 + 30;
+            }
+
+            const alpha = (diya.life / diya.maxLife) * diya.alpha;
+            ctx.globalAlpha = Math.max(0, Math.min(1.0, alpha));
+            ctx.beginPath();
+            ctx.arc(diya.x, diya.y, diya.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
     startRecording() {
         if (this.isRecording) return;
         
@@ -820,7 +878,7 @@ class ConstellationEngine {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `our_love_story_constellation_${Date.now()}.webm`;
+                a.download = `our_complete_love_story_gift_${Date.now()}.webm`;
                 document.body.appendChild(a);
                 a.click();
                 setTimeout(() => {
@@ -834,18 +892,18 @@ class ConstellationEngine {
                     recordBtn.classList.remove('recording-pulse');
                 }
                 this.isRecording = false;
-                alert('✨ Love Story video generated and saved to your Downloads!');
+                alert('✨ Love Story Gift video generated and saved to your Downloads!');
             };
 
             this.mediaRecorder.start();
             this.isRecording = true;
 
-            // Start from Act 1 for complete movie recording
+            // Start from Act 1
             this.setFullMovieMode(true);
 
             const recordBtn = document.getElementById('recordBtn');
             if (recordBtn) {
-                recordBtn.innerHTML = '🔴 Recording Movie... (33s)';
+                recordBtn.innerHTML = '🔴 Recording 5-Act Film...';
                 recordBtn.classList.add('recording-pulse');
             }
 
