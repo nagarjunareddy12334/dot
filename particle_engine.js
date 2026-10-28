@@ -21,8 +21,8 @@ class ConstellationEngine {
                 caption: 'Every heartbeat in this universe beats for you ❤️',
                 imageKey: 'girlfriend',
                 duration: 12.0,
-                focusFalloff: 0.85,
-                threshold: 38,
+                focusFalloff: 0.0,
+                threshold: 18,
                 dotDensity: 14000,
                 type: 'portrait',
                 badge: '💖 Act 1: Love & Her Portrait'
@@ -285,15 +285,32 @@ class ConstellationEngine {
                 this.sceneImages[scene.id] = img;
                 this.processScene(scene, img);
                 loadedCount++;
-                if (loadedCount === total) {
-                    this.setActiveScene(0); // Starts with Act 1: Love Symbol & Her Portrait
+                // If the portrait (Act 1) is ready, activate it right away so the love symbol & pic show immediately!
+                if (scene.id === 'portrait' || loadedCount === total) {
+                    if (this.currentSceneIndex === 0 && (!this.particles || this.particles.length === 0)) {
+                        this.setActiveScene(0);
+                    }
+                }
+            };
+            img.onerror = () => {
+                console.warn('Failed to load image for scene:', scene.id);
+                loadedCount++;
+                if (loadedCount === total && (!this.particles || this.particles.length === 0)) {
+                    this.setActiveScene(0);
                 }
             };
 
-            const dataSrc = window.SCENES_DATA && window.SCENES_DATA[scene.imageKey]
-                ? window.SCENES_DATA[scene.imageKey]
-                : (scene.id === 'portrait' ? 'girlfriend.jpg' : `${scene.imageKey}.jpg`);
-            
+            let dataSrc = null;
+            if (window.SCENES_DATA && window.SCENES_DATA[scene.imageKey]) {
+                dataSrc = window.SCENES_DATA[scene.imageKey];
+            } else if (scene.id === 'portrait' && window.DEFAULT_PHOTO_BASE64) {
+                dataSrc = window.DEFAULT_PHOTO_BASE64;
+            } else if (scene.id === 'portrait') {
+                dataSrc = 'girlfriend.jpg';
+            } else {
+                dataSrc = `${scene.imageKey}.jpg`;
+            }
+
             img.src = dataSrc;
         });
     }
@@ -307,14 +324,15 @@ class ConstellationEngine {
         this.setActiveScene(this.currentSceneIndex);
     }
 
-    getHeartCoord(normIndex, scale = 11) {
+    getHeartCoord(normIndex, scale = 14) {
         const angle = normIndex * Math.PI * 2;
         const x = 16 * Math.pow(Math.sin(angle), 3);
         const y = -(13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
-        const radialNoise = (0.7 + Math.random() * 0.35);
+        const r = Math.sqrt(Math.random());
+        const volumeFactor = 0.25 + r * 0.75;
         return {
-            x: this.width / 2 + x * scale * radialNoise,
-            y: this.height / 2 - 30 + y * scale * radialNoise
+            x: this.width / 2 + x * scale * volumeFactor,
+            y: (this.height / 2 - 25) + y * scale * volumeFactor
         };
     }
 
@@ -388,7 +406,7 @@ class ConstellationEngine {
                     const startX = this.width / 2 + Math.cos(spiralAngle) * spiralDist;
                     const startY = this.height / 2 + Math.sin(spiralAngle) * spiralDist;
 
-                    const heartPos = this.getHeartCoord(pIdx % 1000 / 1000, Math.min(this.width, this.height) * 0.022);
+                    const heartPos = this.getHeartCoord(Math.random(), Math.min(this.width, this.height) * 0.016);
                     const normLum = (lum - scene.threshold) / (255 - scene.threshold);
                     const dotSize = Math.max(0.6, (normLum * this.config.particleSize * (isWide ? 1.15 : 1.3)) + 0.35);
 
@@ -612,6 +630,7 @@ class ConstellationEngine {
         const ctx = this.ctx;
         const w = this.width;
         const h = this.height;
+        const t = this.currentTime;
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, w, h);
@@ -634,7 +653,6 @@ class ConstellationEngine {
             this.drawDiamondGlitter(ctx, t);
         }
 
-        const t = this.currentTime;
         const rippleDist = this.config.rippleStrength;
         const rippleDistSq = rippleDist * rippleDist;
 
@@ -648,10 +666,18 @@ class ConstellationEngine {
 
         // Love Symbol / Pulsating Heart for Act 1
         let heartPulse = 1.0;
-        if (curScene.type === 'portrait' && t >= 1.8 && t < 4.2) {
-            const b1 = Math.max(0, Math.sin((t - 1.8) * Math.PI * 4));
-            const b2 = Math.max(0, Math.sin((t - 3.0) * Math.PI * 4));
-            heartPulse = 1.0 + (b1 + b2) * 0.14;
+        if (curScene.type === 'portrait' && t < 4.2) {
+            const beatCycle = (t % 0.85) / 0.85;
+            if (beatCycle < 0.16) {
+                heartPulse = 1.0 + Math.sin((beatCycle / 0.16) * Math.PI) * 0.16;
+            } else if (beatCycle >= 0.22 && beatCycle < 0.38) {
+                heartPulse = 1.0 + Math.sin(((beatCycle - 0.22) / 0.16) * Math.PI) * 0.10;
+            }
+        }
+
+        // Draw radiant glowing love heart outline & stardust bloom (Act 1)
+        if (curScene.type === 'portrait') {
+            this.drawGlowingHeartOutline(ctx, t, heartPulse);
         }
 
         const breathTime = t * 1.5;
@@ -662,30 +688,25 @@ class ConstellationEngine {
 
             if (curScene.type === 'portrait') {
                 // First: Love symbol / Beating Heart -> Then: Her Portrait
-                if (t < 1.0) {
-                    const pre = t * 0.4;
-                    curX = p.startX + Math.sin(pre + p.twinklePhase) * 10;
-                    curY = p.startY + Math.cos(pre + p.twinklePhase) * 10;
-                    alpha = Math.max(0, Math.sin(p.twinklePhase + t * 2)) * 0.1;
-                } else if (t < 4.2) {
-                    // Swarm into pulsing cosmic love heart
-                    const prog = Math.min(1.0, (t - 1.0) / 2.2);
+                if (t < 4.0) {
+                    // Assemble instantly and pulse as the cosmic love heart!
+                    const prog = Math.min(1.0, t / 0.8);
                     const ease = this.easeInOutQuad(prog);
-                    const swirl = (1.0 - prog) * 3.5;
+                    const swirl = (1.0 - prog) * 2.5;
                     const hx = (p.heartX - this.width / 2) * heartPulse + this.width / 2;
-                    const hy = (p.heartY - (this.height / 2 - 30)) * heartPulse + (this.height / 2 - 30);
-                    curX = p.startX + (hx - p.startX) * ease + Math.sin(swirl + p.twinklePhase) * (1.0 - prog) * 50;
-                    curY = p.startY + (hy - p.startY) * ease + Math.cos(swirl + p.twinklePhase) * (1.0 - prog) * 50;
-                    alpha = prog * p.baseAlpha * (0.8 + Math.sin(t * 3 + p.twinklePhase) * 0.2);
-                } else if (t < 8.6) {
+                    const hy = (p.heartY - (this.height / 2 - 25)) * heartPulse + (this.height / 2 - 25);
+                    curX = p.startX + (hx - p.startX) * ease + Math.sin(swirl + p.twinklePhase) * (1.0 - prog) * 40;
+                    curY = p.startY + (hy - p.startY) * ease + Math.cos(swirl + p.twinklePhase) * (1.0 - prog) * 40;
+                    alpha = Math.max(0.65, prog * 0.95) * (0.85 + Math.sin(t * 3.5 + p.twinklePhase) * 0.15);
+                } else if (t < 7.8) {
                     // Blossoms into her gorgeous portrait!
-                    const prog = Math.min(1.0, (t - 4.2) / (3.6 + p.staggerDelay * 0.6));
+                    const prog = Math.min(1.0, (t - 4.0) / (3.2 + p.staggerDelay * 0.5));
                     const ease = this.easeOutCubic(prog);
-                    const deflect = Math.sin(prog * Math.PI) * 40;
+                    const deflect = Math.sin(prog * Math.PI) * 35;
                     const angle = Math.atan2(p.targetY - p.heartY, p.targetX - p.heartX) + Math.PI / 2;
                     curX = p.heartX + (p.targetX - p.heartX) * ease + Math.cos(angle) * deflect;
                     curY = p.heartY + (p.targetY - p.heartY) * ease + Math.sin(angle) * deflect;
-                    alpha = 0.5 + ease * 0.5 * p.baseAlpha;
+                    alpha = Math.max(0.45, 0.5 + ease * 0.5 * p.baseAlpha);
                 } else {
                     // Living diamond constellation portrait
                     p.floatAngle += p.floatSpeed;
@@ -693,7 +714,7 @@ class ConstellationEngine {
                     curX = p.targetX + Math.cos(p.floatAngle) * fOff;
                     curY = p.targetY + Math.sin(p.floatAngle) * fOff;
                     const tw = Math.sin(t * 3.0 + p.twinklePhase) * 0.18;
-                    alpha = Math.max(0.25, Math.min(1.0, p.baseAlpha + tw));
+                    alpha = Math.max(0.35, Math.min(1.0, p.baseAlpha + tw));
                     curX = this.applyMouseRipple(p, curX, curY, rippleDist, rippleDistSq);
                 }
             } else {
@@ -784,6 +805,69 @@ class ConstellationEngine {
         p.vx *= 0.88;
         p.vy *= 0.88;
         return curX + p.vx;
+    }
+
+    drawGlowingHeartOutline(ctx, t, heartPulse) {
+        if (t >= 4.5) return;
+        ctx.save();
+
+        let heartAlpha = 1.0;
+        if (t < 0.6) {
+            heartAlpha = Math.min(1.0, t / 0.6);
+        } else if (t > 3.8) {
+            heartAlpha = Math.max(0, 1.0 - (t - 3.8) / 0.7);
+        }
+        if (heartAlpha <= 0.01) {
+            ctx.restore();
+            return;
+        }
+
+        const cx = this.width / 2;
+        const cy = this.height / 2 - 25;
+        const scale = Math.min(this.width, this.height) * 0.016 * heartPulse;
+
+        const drawHeartPath = (s) => {
+            ctx.beginPath();
+            const steps = 100;
+            for (let i = 0; i <= steps; i++) {
+                const angle = (i / steps) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(angle), 3);
+                const y = -(13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
+                const px = cx + x * s;
+                const py = cy + y * s;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+        };
+
+        // 1. Soft ethereal inner heart glow
+        ctx.globalAlpha = heartAlpha * 0.22;
+        const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 260 * (scale / 12));
+        grad.addColorStop(0, 'rgba(255, 90, 140, 0.7)');
+        grad.addColorStop(0.5, 'rgba(255, 180, 210, 0.25)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = grad;
+        drawHeartPath(scale);
+        ctx.fill();
+
+        // 2. Glowing Rose & Diamond Neon Contour
+        ctx.shadowColor = 'rgba(255, 120, 170, 0.95)';
+        ctx.shadowBlur = 24;
+        ctx.strokeStyle = `rgba(255, 220, 235, ${(heartAlpha * 0.9).toFixed(2)})`;
+        ctx.lineWidth = 2.5;
+        drawHeartPath(scale);
+        ctx.stroke();
+
+        // 3. Crisp Diamond White Inner Core Outline
+        ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${(heartAlpha * 0.95).toFixed(2)})`;
+        ctx.lineWidth = 1.2;
+        drawHeartPath(scale);
+        ctx.stroke();
+
+        ctx.restore();
     }
 
     drawDiamondSparkles(ctx, t) {
