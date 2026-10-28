@@ -271,4 +271,24 @@ document.addEventListener('DOMContentLoaded', () => {
             soundscape.start();
         }
     }, { once: true });
+
+    // Proposal Accept Buttons
+    const acceptProposalBtn = document.getElementById('acceptProposalBtn');
+    const sweetProposalBtn = document.getElementById('sweetProposalBtn');
+
+    if (acceptProposalBtn) {
+        acceptProposalBtn.addEventListener('click', () => {
+            if (engine && engine.acceptProposal) {
+                engine.acceptProposal();
+            }
+        });
+    }
+
+    if (sweetProposalBtn) {
+        sweetProposalBtn.addEventListener('click', () => {
+            if (engine && engine.acceptProposal) {
+                engine.acceptProposal();
+            }
+        });
+    }
 });

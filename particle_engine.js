@@ -74,6 +74,19 @@ class ConstellationEngine {
                 dotDensity: 14000,
                 type: 'tableDate',
                 badge: '🕯️ Act 5: Candlelight Date'
+            },
+            {
+                id: 'proposal',
+                title: 'Act 6: Sacred Temple Proposal',
+                caption: 'Before God and the sacred temple flames, down on one knee with a diamond ring... 💍🛕❤️',
+                imageKey: 'proposalKnee',
+                acceptedImageKey: 'proposalKiss',
+                duration: 18.0,
+                focusFalloff: 0.10,
+                threshold: 22,
+                dotDensity: 14000,
+                type: 'proposal',
+                badge: '💍 Act 6: Sacred Proposal'
             }
         ];
 
@@ -82,6 +95,12 @@ class ConstellationEngine {
         this.sceneParticleCache = {};
         this.sceneSparkleCache = {};
         this.sceneImages = {};
+
+        // Proposal State (Act 6 Interactive Proposal)
+        this.proposalAccepted = false;
+        this.proposalModalShown = false;
+        this.isMorphingToKiss = false;
+        this.morphStartTime = 0.0;
 
         // Active State
         this.particles = [];
@@ -313,6 +332,22 @@ class ConstellationEngine {
 
             img.src = dataSrc;
         });
+
+        // Also preload proposalKiss for Act 6 finale acceptance morph
+        const kissImg = new Image();
+        kissImg.onload = () => {
+            this.sceneImages['proposalKiss'] = kissImg;
+            this.processScene({
+                id: 'proposalKiss',
+                type: 'proposalKiss',
+                threshold: 22,
+                dotDensity: 14000,
+                focusFalloff: 0.10
+            }, kissImg);
+        };
+        kissImg.src = window.SCENES_DATA && window.SCENES_DATA['proposalKiss']
+            ? window.SCENES_DATA['proposalKiss']
+            : 'proposal_kiss.jpg';
     }
 
     reprocessAllScenes() {
@@ -321,6 +356,15 @@ class ConstellationEngine {
                 this.processScene(scene, this.sceneImages[scene.id]);
             }
         });
+        if (this.sceneImages['proposalKiss']) {
+            this.processScene({
+                id: 'proposalKiss',
+                type: 'proposalKiss',
+                threshold: 22,
+                dotDensity: 14000,
+                focusFalloff: 0.10
+            }, this.sceneImages['proposalKiss']);
+        }
         this.setActiveScene(this.currentSceneIndex);
     }
 
@@ -466,6 +510,16 @@ class ConstellationEngine {
         this.currentTime = 0.0;
         this.lastFrameTime = performance.now();
 
+        // Reset proposal interactive state if entering or switching to proposal scene
+        if (scene.id === 'proposal') {
+            this.proposalAccepted = false;
+            this.proposalModalShown = false;
+            this.isMorphingToKiss = false;
+            this.morphStartTime = 0.0;
+            const modal = document.getElementById('proposalModal');
+            if (modal) modal.classList.remove('active');
+        }
+
         // Update romantic caption
         const captionEl = document.getElementById('romanticCaption');
         const captionInput = document.getElementById('captionInput');
@@ -514,6 +568,15 @@ class ConstellationEngine {
             this.setActiveScene(0, true);
         } else {
             this.currentTime = 0.0;
+            if (this.scenes[this.currentSceneIndex].id === 'proposal') {
+                this.proposalAccepted = false;
+                this.proposalModalShown = false;
+                this.isMorphingToKiss = false;
+                this.morphStartTime = 0.0;
+                const modal = document.getElementById('proposalModal');
+                if (modal) modal.classList.remove('active');
+                this.particles = this.sceneParticleCache['proposal'] || [];
+            }
         }
         this.isPlaying = true;
         this.lastFrameTime = performance.now();
@@ -536,6 +599,65 @@ class ConstellationEngine {
         const curScene = this.scenes[this.currentSceneIndex];
         this.currentTime = Math.max(0, Math.min(curScene.duration, timeSeconds));
         this.lastFrameTime = performance.now();
+    }
+
+    showProposalModal() {
+        this.proposalModalShown = true;
+        this.isPlaying = false;
+        this.updatePlayPauseUI();
+        const modal = document.getElementById('proposalModal');
+        if (modal) modal.classList.add('active');
+    }
+
+    acceptProposal() {
+        this.proposalAccepted = true;
+        const modal = document.getElementById('proposalModal');
+        if (modal) modal.classList.remove('active');
+
+        // Romantic caption update
+        const captionEl = document.getElementById('romanticCaption');
+        const captionText = "She said YES! 💍 Forever in his arms under God's eternal blessings 💖✨";
+        if (captionEl) {
+            captionEl.textContent = captionText;
+            captionEl.style.opacity = 1.0;
+        }
+
+        // Play glorious temple celebration chimes & chords
+        if (window.soundscape) {
+            window.soundscape.playTempleCelebration();
+        }
+
+        // Spawn explosive celebratory diamond sparkle bursts
+        for (let i = 0; i < 45; i++) {
+            this.spawnDiamondSparkle(
+                this.width * 0.15 + Math.random() * (this.width * 0.7),
+                this.height * 0.15 + Math.random() * (this.height * 0.7)
+            );
+        }
+
+        // Morph particles smoothly from proposalKnee to proposalKiss
+        const kissParticles = this.sceneParticleCache['proposalKiss'];
+        if (kissParticles && kissParticles.length > 0) {
+            const count = Math.min(this.particles.length, kissParticles.length);
+            for (let i = 0; i < count; i++) {
+                const p = this.particles[i];
+                const kp = kissParticles[i];
+                p.morphStartX = p.x;
+                p.morphStartY = p.y;
+                p.targetX = kp.targetX;
+                p.targetY = kp.targetY;
+                p.size = kp.size;
+                p.baseAlpha = kp.baseAlpha;
+                p.colorLuminance = kp.colorLuminance;
+                p.staggerDelay = Math.random() * 1.0;
+            }
+            this.morphStartTime = this.currentTime;
+            this.isMorphingToKiss = true;
+        }
+
+        this.isPlaying = true;
+        this.lastFrameTime = performance.now();
+        this.updatePlayPauseUI();
     }
 
     updatePlayPauseUI() {
@@ -564,6 +686,13 @@ class ConstellationEngine {
 
         if (this.isPlaying) {
             this.currentTime += dt * this.playbackRate;
+
+            // Trigger proposal question when he is on one knee holding the ring (Act 6)
+            if (curScene.type === 'proposal' && !this.proposalAccepted && !this.proposalModalShown) {
+                if (this.currentTime >= 4.2) {
+                    this.showProposalModal();
+                }
+            }
 
             if (this.currentTime >= sceneDuration) {
                 if (this.isFullMovieMode) {
@@ -647,8 +776,11 @@ class ConstellationEngine {
         // Scene-specific animated elements
         if (curScene.type === 'tableDate') {
             this.drawCandleEmbers(ctx);
-        } else if (curScene.type === 'templeDate') {
+        } else if (curScene.type === 'templeDate' || curScene.type === 'proposal') {
             this.drawTempleDiyaEmbers(ctx);
+            if (this.proposalAccepted) {
+                this.drawDiamondGlitter(ctx, t);
+            }
         } else if (curScene.type === 'portrait' && t >= 3.0) {
             this.drawDiamondGlitter(ctx, t);
         }
@@ -717,8 +849,29 @@ class ConstellationEngine {
                     alpha = Math.max(0.35, Math.min(1.0, p.baseAlpha + tw));
                     curX = this.applyMouseRipple(p, curX, curY, rippleDist, rippleDistSq);
                 }
+            } else if (curScene.type === 'proposal' && this.isMorphingToKiss) {
+                // Morph into proposalKiss: Putting ring on finger & kissing forehead & cheek!
+                const morphElapsed = Math.max(0, t - this.morphStartTime);
+                const transitDuration = 3.2 + (p.staggerDelay || 0) * 0.4;
+                if (morphElapsed < transitDuration) {
+                    const prog = Math.min(1.0, morphElapsed / transitDuration);
+                    const ease = this.easeInOutQuad(prog);
+                    const swirl = Math.sin(prog * Math.PI) * 28;
+                    const travelAngle = Math.atan2(p.targetY - p.morphStartY, p.targetX - p.morphStartX) + Math.PI / 2;
+                    curX = p.morphStartX + (p.targetX - p.morphStartX) * ease + Math.cos(travelAngle) * swirl;
+                    curY = p.morphStartY + (p.targetY - p.morphStartY) * ease + Math.sin(travelAngle) * swirl;
+                    alpha = Math.max(0.4, p.baseAlpha);
+                } else {
+                    p.floatAngle += p.floatSpeed;
+                    const fOff = Math.sin(p.floatAngle + breathTime) * p.floatRadius;
+                    curX = p.targetX + Math.cos(p.floatAngle) * fOff;
+                    curY = p.targetY + Math.sin(p.floatAngle) * fOff;
+                    const tw = Math.sin(t * 3.0 + p.twinklePhase) * 0.18;
+                    alpha = Math.max(0.35, Math.min(1.0, p.baseAlpha + tw));
+                    curX = this.applyMouseRipple(p, curX, curY, rippleDist, rippleDistSq);
+                }
             } else {
-                // Acts 2, 3, 4, 5: Graceful stardust flow into the chapter memory
+                // Acts 2, 3, 4, 5, 6(initial): Graceful stardust flow into the chapter memory
                 const transitDuration = 4.0 + p.staggerDelay * 0.5;
                 if (t < 0.8) {
                     const pre = t * 0.5;
@@ -750,8 +903,8 @@ class ConstellationEngine {
             let pSize = p.size;
             let isDiamondPrism = false;
 
-            // Diamond light sweep effect on her face (Act 1)
-            if (curScene.type === 'portrait' && t >= 5.5) {
+            // Diamond light sweep effect on her face & diamond ring (Act 1 & Act 6)
+            if ((curScene.type === 'portrait' || curScene.type === 'proposal') && t >= 5.0) {
                 const distToSweep = Math.abs((curX + curY) - sweepPos);
                 if (distToSweep < 120) {
                     const sweepGlow = (1.0 - distToSweep / 120) * this.config.diamondBrilliance;

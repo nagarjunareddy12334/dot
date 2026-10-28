@@ -173,6 +173,46 @@ class RomanticSoundscape {
         }
         return this.isMuted;
     }
+
+    playTempleCelebration() {
+        if (!this.ctx) this.init();
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const now = this.ctx.currentTime;
+
+        // Resonant Temple Chimes & Sacred Bells
+        const templeBellFreqs = [587.33, 880.00, 1174.66, 1760.00];
+        templeBellFreqs.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.0001, now + idx * 0.12);
+            gain.gain.linearRampToValueAtTime(0.18, now + idx * 0.12 + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 3.5);
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 3.6);
+        });
+
+        // Joyful celesta arpeggios
+        const celestaNotes = [739.99, 880.00, 1108.73, 1174.66, 1479.98, 1760.00];
+        celestaNotes.forEach((freq, idx) => {
+            this.playCelestaChime(freq, now + 0.35 + idx * 0.14);
+        });
+
+        // Triumphant Warm Piano Chords (D Major)
+        [now + 0.3, now + 1.6, now + 3.0].forEach((chordTime, cIdx) => {
+            const chords = [
+                [293.66, 369.99, 440.00, 587.33], // D Major
+                [369.99, 440.00, 554.37, 739.99], // F#m / D
+                [293.66, 440.00, 587.33, 880.00]  // High D octave
+            ];
+            chords[cIdx].forEach((freq) => {
+                this.playPianoNote(freq, chordTime, 4.5, 0.18);
+            });
+        });
+    }
 }
 
 window.soundscape = new RomanticSoundscape();
